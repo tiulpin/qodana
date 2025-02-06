@@ -40,7 +40,8 @@ func newPullCommand() *cobra.Command {
 				log.Println("Native mode is used, skipping pull")
 			} else {
 				core.PrepareContainerEnvSettings()
-				containerClient, err := client.NewClientWithOpts()
+				// client.WithHostFromEnv() is needed for gitlab
+				containerClient, err := client.NewClientWithOpts(client.WithHostFromEnv())
 				if err != nil {
 					log.Fatal("couldn't connect to container engine ", err)
 				}
