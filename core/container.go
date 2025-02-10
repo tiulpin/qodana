@@ -381,6 +381,15 @@ func getDockerOptions(opts *QodanaOptions) *backend.ContainerCreateConfig {
 			log.Fatal("couldn't parse volume ", volume)
 		}
 	}
+	_, err = os.Stat(cachePath)
+	if err != nil && os.IsNotExist(err) {
+		log.Fatal("cache directory doesn't exist ", cachePath)
+	}
+	_, err = os.Stat(resultsPath)
+	if err != nil && os.IsNotExist(err) {
+		log.Fatal("cache directory doesn't exist ", resultsPath)
+	}
+
 	log.Debugf("image: %s", opts.Linter)
 	log.Debugf("container name: %s", containerName)
 	log.Debugf("user: %s", opts.User)
