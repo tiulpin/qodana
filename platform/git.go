@@ -17,6 +17,7 @@
 package platform
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"strings"
 )
@@ -120,7 +121,12 @@ func GitCurrentRevision(cwd string, logdir string) (string, error) {
 
 // GitRevisionExists returns true when revision exists in history.
 func GitRevisionExists(cwd string, revision string, logdir string) bool {
-	_, stderr, err := gitRun(cwd, []string{"show", "--no-patch", revision}, logdir)
+	stdout, stderr, err := gitRun(cwd, []string{"show", "--no-patch", revision}, logdir)
+	fmt.Printf(stdout)
+	fmt.Printf(stderr)
+	if err != nil {
+		fmt.Printf(err.Error())
+	}
 	if strings.Contains(stderr, revision) || strings.Contains(stderr, "fatal:") || err != nil {
 		return false
 	}
