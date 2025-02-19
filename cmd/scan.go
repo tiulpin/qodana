@@ -24,9 +24,9 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2024/platform/effectiveyaml"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -50,8 +50,6 @@ But you can always override qodana.yaml options with the following command-line 
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 
-			qodanaYaml := qdyaml.LoadQodanaYaml(cliOptions.ProjectDir, cliOptions.ConfigName)
-
 			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,
 				cliOptions.Ide,
@@ -68,7 +66,28 @@ But you can always override qodana.yaml options with the following command-line 
 			checkProjectDir(commonCtx.ProjectDir)
 
 			preparedHost := startup.PrepareHost(commonCtx)
-			scanContext := corescan.CreateContext(*cliOptions, commonCtx, preparedHost, qodanaYaml)
+
+			var effectiveYaml effectiveyaml.Data
+			if commonCtx.Ide != "" {
+				var err error
+				effectiveYaml, err = effectiveyaml.BuildEffectiveYaml(
+					commonCtx.ProjectDir,
+					cliOptions.ConfigName,
+					cliOptions.GlobalConfigurationsFile,
+					cliOptions.GlobalConfigurationId,
+					preparedHost.Prod.JbrJava(),
+					commonCtx.QodanaSystemDir,
+					"qdconfig",
+					commonCtx.LogDir(),
+				)
+				if err != nil {
+					os.Exit(1)
+				}
+			} else {
+				// no need for qodana.yaml in "wrapper under container CLI run"
+				effectiveYaml = effectiveyaml.Data{}
+			}
+			scanContext := corescan.CreateContext(*cliOptions, commonCtx, preparedHost, effectiveYaml)
 
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			if qdenv.IsContainer() {

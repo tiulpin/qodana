@@ -84,7 +84,6 @@ func (p Product) javaHome() string {
 }
 
 func (p Product) JbrJava() string {
-	utils.IsInstalled("java")
 	if p.Home != "" {
 		switch runtime.GOOS {
 		case "darwin":
@@ -219,6 +218,10 @@ func (p Product) Is233orNewer() bool {
 
 func (p Product) Is242orNewer() bool {
 	return p.isNotOlderThan(242)
+}
+
+func (p Product) Is251orNewer() bool {
+	return p.isNotOlderThan(251)
 }
 
 func (p Product) isNotOlderThan(version int) bool {

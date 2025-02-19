@@ -115,7 +115,7 @@ failThreshold: 123
 						t.Fatal(err)
 					}
 				}
-				yaml := qdyaml.LoadQodanaYaml(tempDir, "qodana.yaml")
+				yaml := qdyaml.LoadLocalNotEffectiveQodanaYaml(tempDir, "qodana.yaml")
 				c := thirdpartyscan.ContextBuilder{
 					FailThreshold: testData.option,
 					QodanaYaml:    yaml,
