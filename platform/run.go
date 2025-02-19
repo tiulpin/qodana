@@ -138,9 +138,9 @@ func RunThirdPartyLinterAnalysis(
 		return context, 1, err
 	}
 	resultsPath := ReportResultsPath(context.ResultsDir())
-	if qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath != "" {
+	if qodanaConfigEffectiveFiles.LocalQodanaYamlPath != "" {
 		if err = copyQodanaYamlToReportPath(
-			qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath,
+			qodanaConfigEffectiveFiles.LocalQodanaYamlPath,
 			resultsPath,
 		); err != nil {
 			msg.ErrorMessage(err.Error())
