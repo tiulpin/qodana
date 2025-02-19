@@ -152,7 +152,7 @@ func TestInitCommand(t *testing.T) {
 
 	updatedQodanaYamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlPathWithProject(projectPath, "")
 
-	if strings.HasSuffix(updatedQodanaYamlPath, "qodana.yml") {
+	if !strings.HasSuffix(updatedQodanaYamlPath, "qodana.yml") {
 		t.Fatalf("expected \"qodana.yml\" got \"%s\"", updatedQodanaYamlPath)
 	}
 

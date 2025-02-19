@@ -24,9 +24,10 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
-	"github.com/JetBrains/qodana-cli/v2024/platform/effectiveyaml"
+	"github.com/JetBrains/qodana-cli/v2024/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -67,10 +68,11 @@ But you can always override qodana.yaml options with the following command-line 
 
 			preparedHost := startup.PrepareHost(commonCtx)
 
-			var effectiveYaml effectiveyaml.Data
+			effectiveConfigFiles := effectiveconfig.Files{}
+			qodanaYamlConfig := corescan.QodanaYamlConfig{}
 			if commonCtx.Ide != "" {
 				var err error
-				effectiveYaml, err = effectiveyaml.BuildEffectiveYaml(
+				effectiveConfigFiles, err = effectiveconfig.CreateEffectiveConfigFiles(
 					commonCtx.ProjectDir,
 					cliOptions.ConfigName,
 					cliOptions.GlobalConfigurationsFile,
@@ -81,13 +83,21 @@ But you can always override qodana.yaml options with the following command-line 
 					commonCtx.LogDir(),
 				)
 				if err != nil {
+					msg.ErrorMessage("Failed to load Qodana configuration %w", err)
 					os.Exit(1)
 				}
-			} else {
-				// no need for qodana.yaml in "wrapper under container CLI run"
-				effectiveYaml = effectiveyaml.Data{}
+				if effectiveConfigFiles.EffectiveQodanaYamlPath != "" {
+					yaml := qdyaml.LoadQodanaYamlByFullPath(effectiveConfigFiles.EffectiveQodanaYamlPath)
+					qodanaYamlConfig = corescan.YamlConfig(yaml)
+				}
 			}
-			scanContext := corescan.CreateContext(*cliOptions, commonCtx, preparedHost, effectiveYaml)
+			scanContext := corescan.CreateContext(
+				*cliOptions,
+				commonCtx,
+				preparedHost,
+				qodanaYamlConfig,
+				effectiveConfigFiles.ConfigDir,
+			)
 
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			if qdenv.IsContainer() {

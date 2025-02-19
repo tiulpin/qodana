@@ -24,7 +24,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/core/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	platformcmd "github.com/JetBrains/qodana-cli/v2024/platform/cmd"
-	"github.com/JetBrains/qodana-cli/v2024/platform/effectiveyaml"
 	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
@@ -1106,13 +1105,6 @@ func Test_Properties(t *testing.T) {
 					"",
 				)
 				qConfig := qdyaml.GetQodanaYamlOrDefault(projectDir)
-				effectiveYamlData := effectiveyaml.Data{
-					ConfigDir:               "/qodana-config/",
-					EffectiveQodanaYamlPath: "",
-					LocalQodanaYamlPath:     "",
-					QodanaConfigJsonPath:    "",
-					EffectiveQodanaYaml:     qConfig,
-				}
 
 				err = os.WriteFile(filepath.Join(projectDir, "qodana.yml"), []byte(tc.qodanaYaml), 0o600)
 				if err != nil {
@@ -1135,7 +1127,8 @@ func Test_Properties(t *testing.T) {
 							Version:        "2023.3",
 						},
 					},
-					effectiveYamlData,
+					corescan.YamlConfig(qConfig),
+					"",
 				)
 				actual := GetScanProperties(context)
 				assert.Equal(t, tc.expected, actual)

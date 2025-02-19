@@ -22,6 +22,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2024/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
@@ -74,10 +75,34 @@ func RunThirdPartyLinterAnalysis(
 	tempMountPath, mountInfo := extractUtils(linter, commonCtx.CacheDir, isCommunity)
 	defer cleanupUtils(tempMountPath)
 
-	qodanaYamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlPathWithProject(commonCtx.ProjectDir, cliOptions.ConfigName)
-	yaml := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlPath)
+	qodanaConfigEffectiveFiles, err := effectiveconfig.CreateEffectiveConfigFiles(
+		commonCtx.ProjectDir,
+		cliOptions.ConfigName,
+		cliOptions.GlobalConfigurationsFile,
+		cliOptions.GlobalConfigurationId,
+		mountInfo.JavaPath,
+		commonCtx.QodanaSystemDir,
+		"qdconfig",
+		commonCtx.LogDir(),
+	)
+	if err != nil {
+		msg.ErrorMessage("Failed to load Qodana configuration %w", err)
+		os.Exit(1)
+	}
+	qodanaYamlConfig := thirdpartyscan.QodanaYamlConfig{}
+	if qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath != "" {
+		yaml := qdyaml.LoadQodanaYamlByFullPath(qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath)
+		qodanaYamlConfig = thirdpartyscan.YamlConfig(yaml)
+	}
 
-	context := thirdpartyscan.ComputeContext(cliOptions, commonCtx, linterInfo, mountInfo, thirdPartyCloudData, yaml)
+	context := thirdpartyscan.ComputeContext(
+		cliOptions,
+		commonCtx,
+		linterInfo,
+		mountInfo,
+		thirdPartyCloudData,
+		qodanaYamlConfig,
+	)
 
 	LogContext(&context)
 
@@ -113,9 +138,14 @@ func RunThirdPartyLinterAnalysis(
 		return context, 1, err
 	}
 	resultsPath := ReportResultsPath(context.ResultsDir())
-	if err = copyQodanaYamlToReportPath(qodanaYamlPath, resultsPath); err != nil {
-		msg.ErrorMessage(err.Error())
-		return context, 1, err
+	if qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath != "" {
+		if err = copyQodanaYamlToReportPath(
+			qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath,
+			resultsPath,
+		); err != nil {
+			msg.ErrorMessage(err.Error())
+			return context, 1, err
+		}
 	}
 	sendReportToQodanaServer(context)
 	return context, analysisResult, nil

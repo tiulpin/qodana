@@ -362,8 +362,9 @@ type Php struct {
 	Version string `yaml:"version,omitempty"`
 }
 
-// FindDefaultLocalQodanaYaml returns default qodana yaml filename in project (even if it doesn't exist)
-func FindDefaultLocalQodanaYaml(project string) string {
+// FindDefaultLocalNotEffectiveQodanaYaml returns default qodana yaml filename in project (even if it doesn't exist)
+// does not process `imports` field and doesn't use global configurations
+func FindDefaultLocalNotEffectiveQodanaYaml(project string) string {
 	filename := "qodana.yml"
 	if info, _ := os.Stat(filepath.Join(project, filename)); info != nil {
 		return filename
@@ -372,16 +373,18 @@ func FindDefaultLocalQodanaYaml(project string) string {
 	}
 }
 
+// GetLocalNotEffectiveQodanaYamlPathWithProject does not process `imports` field and doesn't use global configuration
 func GetLocalNotEffectiveQodanaYamlPathWithProject(project string, yamlPathInProject string) string {
 	if yamlPathInProject == "" {
-		yamlPathInProject = FindDefaultLocalQodanaYaml(project)
+		yamlPathInProject = FindDefaultLocalNotEffectiveQodanaYaml(project)
 	}
 	qodanaYamlPath := filepath.Join(project, yamlPathInProject)
 	return qodanaYamlPath
 }
 
-// LoadLocalNotEffectiveQodanaYaml gets Qodana YAML from the project.
-func LoadLocalNotEffectiveQodanaYaml(project string, yamlPathInProject string) QodanaYaml {
+// TestOnlyLoadLocalNotEffectiveQodanaYaml test only!
+// Gets Qodana YAML from the project. Does not process `imports` field and doesn't use global configurations
+func TestOnlyLoadLocalNotEffectiveQodanaYaml(project string, yamlPathInProject string) QodanaYaml {
 	qodanaYamlPath := GetLocalNotEffectiveQodanaYamlPathWithProject(project, yamlPathInProject)
 	q := LoadQodanaYamlByFullPath(qodanaYamlPath)
 	return q

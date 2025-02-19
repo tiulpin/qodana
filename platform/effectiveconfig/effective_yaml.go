@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package effectiveyaml
+package effectiveconfig
 
 import (
 	"errors"
@@ -27,25 +27,29 @@ import (
 	"path/filepath"
 )
 
-type Data struct {
+// Files – effective configuration files, constructed by calling config-loader-cli.jar,
+// all paths are absolute
+// + also profile files are stored in config dir
+type Files struct {
 	ConfigDir               string
 	EffectiveQodanaYamlPath string
 	LocalQodanaYamlPath     string
 	QodanaConfigJsonPath    string
-	EffectiveQodanaYaml     qdyaml.QodanaYaml
 }
 
-func BuildEffectiveYaml(
+func CreateEffectiveConfigFiles(
 	projectDir string,
-	localQodanaYamlPathFromRoot string,
+	localQodanaYamlPath string,
 	globalConfigurationsFile string,
 	globalConfigId string,
 	jrePath string,
 	systemDir string,
 	effectiveConfigDirName string,
 	logDir string,
-) (Data, error) {
-	localQodanaYamlPathFromRoot = qdyaml.FindDefaultLocalQodanaYaml(projectDir)
+) (Files, error) {
+	if localQodanaYamlPath == "" {
+		localQodanaYamlPath = qdyaml.FindDefaultLocalNotEffectiveQodanaYaml(projectDir)
+	}
 
 	configLoaderCli := createConfigLoaderCliJar(systemDir)
 	defer func(name string) {
@@ -57,10 +61,7 @@ func BuildEffectiveYaml(
 
 	effectiveConfigDir := filepath.Join(systemDir, effectiveConfigDirName)
 
-	localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlPathWithProject(
-		projectDir,
-		localQodanaYamlPathFromRoot,
-	)
+	localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlPathWithProject(projectDir, localQodanaYamlPath)
 	args := configurationLoaderCliArgs(
 		jrePath,
 		configLoaderCli,
@@ -75,7 +76,7 @@ func BuildEffectiveYaml(
 	}
 
 	effectiveQodanaYamlData := getEffectiveQodanaYamlData(effectiveConfigDir)
-	err := verifyEffectiveQodanaYamlIdeAndLinterMatchLocal(effectiveQodanaYamlData, localQodanaYamlPathFromRoot)
+	err := verifyEffectiveQodanaYamlIdeAndLinterMatchLocal(effectiveQodanaYamlData, localQodanaYamlPath)
 	if err != nil {
 		return effectiveQodanaYamlData, err
 	}
@@ -112,10 +113,10 @@ func configurationLoaderCliArgs(
 	effectiveConfigDir string,
 ) []string {
 	if jrePath == "" {
-		log.Fatal("JRE not found. Required for effective configuration creation in native analysis.")
+		log.Fatal("JRE not found. Required for effective configuration creation.")
 	}
 	if configLoaderCliJarPath == "" {
-		log.Fatal("config-loader-cli.jar not found. Required for effective configuration creation in native analysis.")
+		log.Fatal("config-loader-cli.jar not found. Required for effective configuration creation.")
 	}
 
 	var err error
@@ -164,7 +165,7 @@ func configurationLoaderCliArgs(
 	return args
 }
 
-func getEffectiveQodanaYamlData(effectiveConfigDir string) Data {
+func getEffectiveQodanaYamlData(effectiveConfigDir string) Files {
 	effectiveQodanaYamlPath := filepath.Join(effectiveConfigDir, "effective.qodana.yaml")
 	if !isFileExists(effectiveQodanaYamlPath) {
 		effectiveQodanaYamlPath = ""
@@ -184,13 +185,11 @@ func getEffectiveQodanaYamlData(effectiveConfigDir string) Data {
 	if localQodanaYamlPath != "" && effectiveQodanaYamlPath == "" {
 		log.Fatal("Local qodana.yaml file doesn't have an effective.qodana.yaml file.")
 	}
-
-	effectiveQodanaYaml := qdyaml.LoadQodanaYamlByFullPath(effectiveQodanaYamlPath)
-	return Data{
+	return Files{
 		ConfigDir:               effectiveConfigDir,
 		EffectiveQodanaYamlPath: effectiveQodanaYamlPath,
 		LocalQodanaYamlPath:     localQodanaYamlPath,
-		EffectiveQodanaYaml:     effectiveQodanaYaml,
+		QodanaConfigJsonPath:    qodanaConfigJsonPath,
 	}
 }
 
@@ -206,11 +205,12 @@ func isFileExists(path string) bool {
 }
 
 func verifyEffectiveQodanaYamlIdeAndLinterMatchLocal(
-	effectiveQodanaYamlData Data,
+	effectiveQodanaYamlData Files,
 	localQodanaYamlPathFromRoot string,
 ) error {
-	effectiveLinter := effectiveQodanaYamlData.EffectiveQodanaYaml.Linter
-	effectiveIde := effectiveQodanaYamlData.EffectiveQodanaYaml.Ide
+	effectiveYaml := qdyaml.LoadQodanaYamlByFullPath(effectiveQodanaYamlData.EffectiveQodanaYamlPath)
+	effectiveLinter := effectiveYaml.Linter
+	effectiveIde := effectiveYaml.Ide
 	if effectiveLinter == "" && effectiveIde == "" {
 		return nil
 	}

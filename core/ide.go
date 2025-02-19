@@ -29,7 +29,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-
+)
 
 // getIdeExitCode gets IDEA "exitCode" from SARIF.
 func getIdeExitCode(resultsDir string, c int) (res int) {
@@ -218,7 +218,7 @@ func GetIdeArgs(c corescan.Context) []string {
 			arguments = append(arguments, "--property="+property)
 		}
 	} else if c.Prod().Is251orNewer() {
-		arguments = append(arguments, "--config-dir", utils.QuoteForWindows(c.EffectiveYamlData().ConfigDir))
+		arguments = append(arguments, "--config-dir", utils.QuoteForWindows(c.EffectiveConfigurationDir()))
 	}
 	return arguments
 }
@@ -245,7 +245,7 @@ func installPlugins(c corescan.Context) {
 		return
 	}
 
-	plugins := c.QodanaYaml().Plugins
+	plugins := c.QodanaYamlConfig().Plugins
 	if len(plugins) > 0 {
 		setInstallPluginsVmoptions(c)
 	}

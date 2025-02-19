@@ -81,7 +81,11 @@ func computeActualLinterAndIde(
 	ide := ideFromCliOptions
 
 	if linter == "" && ide == "" {
-		qodanaYaml := qdyaml.LoadLocalNotEffectiveQodanaYaml(projectDir, localNotEffectiveQodanaYamlPathInProject)
+		qodanaYamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlPathWithProject(
+			projectDir,
+			localNotEffectiveQodanaYamlPathInProject,
+		)
+		qodanaYaml := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlPath)
 		if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
 			msg.WarningMessage(
 				"No valid `linter:` or `ide:` field found in %s. Have you run %s? Running that for you...",
