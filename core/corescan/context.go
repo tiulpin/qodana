@@ -18,6 +18,7 @@ package corescan
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform/effectiveyaml"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
@@ -65,7 +66,7 @@ type Context struct {
 	ide                       string
 	id                        string
 	ideDir                    string
-	qodanaYaml                qdyaml.QodanaYaml
+	effectiveYamlData         effectiveyaml.Data
 	prod                      product.Product
 	qodanaToken               string
 	qodanaLicenseOnlyToken    string
@@ -120,74 +121,79 @@ type Context struct {
 	analysisTimeoutMs         int
 	analysisTimeoutExitCode   int
 	jvmDebugPort              int
+	globalConfigurationsFile  string
+	globalConfigurationId     string
 }
 
-func (c Context) Linter() string                  { return c.linter }
-func (c Context) Ide() string                     { return c.ide }
-func (c Context) Id() string                      { return c.id }
-func (c Context) IdeDir() string                  { return c.ideDir }
-func (c Context) QodanaYaml() qdyaml.QodanaYaml   { return c.qodanaYaml }
-func (c Context) Prod() product.Product           { return c.prod }
-func (c Context) QodanaToken() string             { return c.qodanaToken }
-func (c Context) QodanaLicenseOnlyToken() string  { return c.qodanaLicenseOnlyToken }
-func (c Context) ProjectDir() string              { return c.projectDir }
-func (c Context) ResultsDir() string              { return c.resultsDir }
-func (c Context) ConfigDir() string               { return c.configDir }
-func (c Context) LogDir() string                  { return c.logDir }
-func (c Context) QodanaSystemDir() string         { return c.qodanaSystemDir }
-func (c Context) CacheDir() string                { return c.cacheDir }
-func (c Context) ReportDir() string               { return c.reportDir }
-func (c Context) CoverageDir() string             { return c.coverageDir }
-func (c Context) SourceDirectory() string         { return c.sourceDirectory }
-func (c Context) DisableSanity() bool             { return c.disableSanity }
-func (c Context) ProfileName() string             { return c.profileName }
-func (c Context) ProfilePath() string             { return c.profilePath }
-func (c Context) RunPromo() string                { return c.runPromo }
-func (c Context) StubProfile() string             { return c.stubProfile }
-func (c Context) Baseline() string                { return c.baseline }
-func (c Context) BaselineIncludeAbsent() bool     { return c.baselineIncludeAbsent }
-func (c Context) SaveReport() bool                { return c.saveReport }
-func (c Context) ShowReport() bool                { return c.showReport }
-func (c Context) Port() int                       { return c.port }
-func (c Context) Script() string                  { return c.script }
-func (c Context) FailThreshold() string           { return c.failThreshold }
-func (c Context) Commit() string                  { return c.commit }
-func (c Context) DiffStart() string               { return c.diffStart }
-func (c Context) DiffEnd() string                 { return c.diffEnd }
-func (c Context) ForceLocalChangesScript() bool   { return c.forceLocalChangesScript }
-func (c Context) AnalysisId() string              { return c.analysisId }
-func (c Context) User() string                    { return c.user }
-func (c Context) PrintProblems() bool             { return c.printProblems }
-func (c Context) GenerateCodeClimateReport() bool { return c.generateCodeClimateReport }
-func (c Context) SendBitBucketInsights() bool     { return c.sendBitBucketInsights }
-func (c Context) SkipPull() bool                  { return c.skipPull }
-func (c Context) ClearCache() bool                { return c.clearCache }
-func (c Context) ConfigName() string              { return c.configName }
-func (c Context) FullHistory() bool               { return c.fullHistory }
-func (c Context) ApplyFixes() bool                { return c.applyFixes }
-func (c Context) Cleanup() bool                   { return c.cleanup }
-func (c Context) FixesStrategy() string           { return c.fixesStrategy }
-func (c Context) NoStatistics() bool              { return c.noStatistics }
-func (c Context) CdnetSolution() string           { return c.cdnetSolution }
-func (c Context) CdnetProject() string            { return c.cdnetProject }
-func (c Context) CdnetConfiguration() string      { return c.cdnetConfiguration }
-func (c Context) CdnetPlatform() string           { return c.cdnetPlatform }
-func (c Context) CdnetNoBuild() bool              { return c.cdnetNoBuild }
-func (c Context) ClangCompileCommands() string    { return c.clangCompileCommands }
-func (c Context) ClangArgs() string               { return c.clangArgs }
-func (c Context) AnalysisTimeoutMs() int          { return c.analysisTimeoutMs }
-func (c Context) AnalysisTimeoutExitCode() int    { return c.analysisTimeoutExitCode }
-func (c Context) JvmDebugPort() int               { return c.jvmDebugPort }
-func (c Context) Env() []string                   { return arrayCopy(c._env) }
-func (c Context) Property() []string              { return arrayCopy(c._property) }
-func (c Context) Volumes() []string               { return arrayCopy(c._volumes) }
+func (c Context) Linter() string                        { return c.linter }
+func (c Context) Ide() string                           { return c.ide }
+func (c Context) Id() string                            { return c.id }
+func (c Context) IdeDir() string                        { return c.ideDir }
+func (c Context) EffectiveYamlData() effectiveyaml.Data { return c.effectiveYamlData }
+func (c Context) QodanaYaml() qdyaml.QodanaYaml         { return c.effectiveYamlData.EffectiveQodanaYaml }
+func (c Context) Prod() product.Product                 { return c.prod }
+func (c Context) QodanaToken() string                   { return c.qodanaToken }
+func (c Context) QodanaLicenseOnlyToken() string        { return c.qodanaLicenseOnlyToken }
+func (c Context) ProjectDir() string                    { return c.projectDir }
+func (c Context) ResultsDir() string                    { return c.resultsDir }
+func (c Context) ConfigDir() string                     { return c.configDir }
+func (c Context) LogDir() string                        { return c.logDir }
+func (c Context) QodanaSystemDir() string               { return c.qodanaSystemDir }
+func (c Context) CacheDir() string                      { return c.cacheDir }
+func (c Context) ReportDir() string                     { return c.reportDir }
+func (c Context) CoverageDir() string                   { return c.coverageDir }
+func (c Context) SourceDirectory() string               { return c.sourceDirectory }
+func (c Context) DisableSanity() bool                   { return c.disableSanity }
+func (c Context) ProfileName() string                   { return c.profileName }
+func (c Context) ProfilePath() string                   { return c.profilePath }
+func (c Context) RunPromo() string                      { return c.runPromo }
+func (c Context) StubProfile() string                   { return c.stubProfile }
+func (c Context) Baseline() string                      { return c.baseline }
+func (c Context) BaselineIncludeAbsent() bool           { return c.baselineIncludeAbsent }
+func (c Context) SaveReport() bool                      { return c.saveReport }
+func (c Context) ShowReport() bool                      { return c.showReport }
+func (c Context) Port() int                             { return c.port }
+func (c Context) Script() string                        { return c.script }
+func (c Context) FailThreshold() string                 { return c.failThreshold }
+func (c Context) Commit() string                        { return c.commit }
+func (c Context) DiffStart() string                     { return c.diffStart }
+func (c Context) DiffEnd() string                       { return c.diffEnd }
+func (c Context) ForceLocalChangesScript() bool         { return c.forceLocalChangesScript }
+func (c Context) AnalysisId() string                    { return c.analysisId }
+func (c Context) User() string                          { return c.user }
+func (c Context) PrintProblems() bool                   { return c.printProblems }
+func (c Context) GenerateCodeClimateReport() bool       { return c.generateCodeClimateReport }
+func (c Context) SendBitBucketInsights() bool           { return c.sendBitBucketInsights }
+func (c Context) SkipPull() bool                        { return c.skipPull }
+func (c Context) ClearCache() bool                      { return c.clearCache }
+func (c Context) ConfigName() string                    { return c.configName }
+func (c Context) FullHistory() bool                     { return c.fullHistory }
+func (c Context) ApplyFixes() bool                      { return c.applyFixes }
+func (c Context) Cleanup() bool                         { return c.cleanup }
+func (c Context) FixesStrategy() string                 { return c.fixesStrategy }
+func (c Context) NoStatistics() bool                    { return c.noStatistics }
+func (c Context) CdnetSolution() string                 { return c.cdnetSolution }
+func (c Context) CdnetProject() string                  { return c.cdnetProject }
+func (c Context) CdnetConfiguration() string            { return c.cdnetConfiguration }
+func (c Context) CdnetPlatform() string                 { return c.cdnetPlatform }
+func (c Context) CdnetNoBuild() bool                    { return c.cdnetNoBuild }
+func (c Context) ClangCompileCommands() string          { return c.clangCompileCommands }
+func (c Context) ClangArgs() string                     { return c.clangArgs }
+func (c Context) AnalysisTimeoutMs() int                { return c.analysisTimeoutMs }
+func (c Context) AnalysisTimeoutExitCode() int          { return c.analysisTimeoutExitCode }
+func (c Context) JvmDebugPort() int                     { return c.jvmDebugPort }
+func (c Context) Env() []string                         { return arrayCopy(c._env) }
+func (c Context) Property() []string                    { return arrayCopy(c._property) }
+func (c Context) Volumes() []string                     { return arrayCopy(c._volumes) }
+func (c Context) GlobalConfigurationsFile() string      { return c.globalConfigurationsFile }
+func (c Context) GlobalConfigurationId() string         { return c.globalConfigurationId }
 
 type ContextBuilder struct {
 	Linter                    string
 	Ide                       string
 	Id                        string
 	IdeDir                    string
-	QodanaYaml                qdyaml.QodanaYaml
+	EffectiveYamlData         effectiveyaml.Data
 	Prod                      product.Product
 	QodanaToken               string
 	QodanaLicenseOnlyToken    string
@@ -242,6 +248,8 @@ type ContextBuilder struct {
 	AnalysisTimeoutMs         int
 	AnalysisTimeoutExitCode   int
 	JvmDebugPort              int
+	GlobalConfigurationsFile  string
+	GlobalConfigurationId     string
 }
 
 func (b ContextBuilder) Build() Context {
@@ -250,7 +258,7 @@ func (b ContextBuilder) Build() Context {
 		ide:                       b.Ide,
 		id:                        b.Id,
 		ideDir:                    b.IdeDir,
-		qodanaYaml:                b.QodanaYaml,
+		effectiveYamlData:         b.EffectiveYamlData,
 		prod:                      b.Prod,
 		qodanaToken:               b.QodanaToken,
 		qodanaLicenseOnlyToken:    b.QodanaLicenseOnlyToken,
@@ -305,6 +313,8 @@ func (b ContextBuilder) Build() Context {
 		analysisTimeoutMs:         b.AnalysisTimeoutMs,
 		analysisTimeoutExitCode:   b.AnalysisTimeoutExitCode,
 		jvmDebugPort:              b.JvmDebugPort,
+		globalConfigurationsFile:  b.GlobalConfigurationsFile,
+		globalConfigurationId:     b.GlobalConfigurationId,
 	}
 }
 

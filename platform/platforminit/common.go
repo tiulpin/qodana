@@ -132,7 +132,7 @@ func filterByLicensePlan(codes []string, token string) []string {
 }
 
 // GetAndSaveDotNetConfig gets .NET config for the given path and saves configName
-func GetAndSaveDotNetConfig(projectDir string, yamlName string) bool {
+func GetAndSaveDotNetConfig(projectDir string, qodanaYamlFullPath string) bool {
 	possibleOptions := utils.FindFiles(projectDir, []string{".sln", ".csproj", ".vbproj", ".fsproj"})
 	if len(possibleOptions) <= 1 {
 		return false
@@ -149,7 +149,7 @@ func GetAndSaveDotNetConfig(projectDir string, yamlName string) bool {
 	} else {
 		dotnet.Project = filepath.Base(choice)
 	}
-	return qdyaml.SetQodanaDotNet(projectDir, dotnet, yamlName)
+	return qdyaml.SetQodanaDotNet(qodanaYamlFullPath, dotnet)
 }
 
 // AllNativeCodes is a list of all supported Qodana linters product codes

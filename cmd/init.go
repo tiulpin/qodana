@@ -40,8 +40,11 @@ func newInitCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			emptyProduct := product.Product{} // TODO what to do with product?
 
-			cliOptions.ConfigName = qdyaml.FindDefaultQodanaYaml(cliOptions.ProjectDir)
-			qodanaYaml := qdyaml.LoadQodanaYaml(cliOptions.ProjectDir, cliOptions.ConfigName)
+			qodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlPathWithProject(
+				cliOptions.ProjectDir,
+				cliOptions.ConfigName,
+			)
+			qodanaYaml := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlFullPath)
 
 			ide := qodanaYaml.Ide
 			linter := qodanaYaml.Linter
@@ -63,9 +66,8 @@ func newInitCommand() *cobra.Command {
 				analyzer := platforminit.GetAnalyzer(cliOptions.ProjectDir, token)
 
 				qdyaml.WriteQodanaLinterToYamlFile(
-					cliOptions.ProjectDir,
+					qodanaYamlFullPath,
 					analyzer,
-					cliOptions.ConfigName,
 					product.AllCodes,
 				)
 				if product.IsNativeAnalyzer(analyzer) {
@@ -88,11 +90,11 @@ func newInitCommand() *cobra.Command {
 				)
 			}
 			if msg.IsInteractive() && qodanaYaml.IsDotNet() && (qodanaYaml.DotNet.IsEmpty() || cliOptions.Force) {
-				if platforminit.GetAndSaveDotNetConfig(cliOptions.ProjectDir, cliOptions.ConfigName) {
+				if platforminit.GetAndSaveDotNetConfig(cliOptions.ProjectDir, qodanaYamlFullPath) {
 					msg.SuccessMessage("The .NET configuration was successfully set")
 				}
 			}
-			msg.PrintFile(filepath.Join(cliOptions.ProjectDir, cliOptions.ConfigName))
+			msg.PrintFile(qodanaYamlFullPath)
 
 			startupArgs := platforminit.ComputeArgs(
 				linter,

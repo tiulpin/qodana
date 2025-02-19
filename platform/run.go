@@ -74,7 +74,7 @@ func RunThirdPartyLinterAnalysis(
 	tempMountPath, mountInfo := extractUtils(linter, initArgs.CacheDir, isCommunity)
 	defer cleanupUtils(tempMountPath)
 
-	qodanaYamlPath := qdyaml.GetQodanaYamlPathWithProject(initArgs.ProjectDir, cliOptions.ConfigName)
+	qodanaYamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlPathWithProject(initArgs.ProjectDir, cliOptions.ConfigName)
 	yaml := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlPath)
 
 	context := thirdpartyscan.ComputeContext(cliOptions, initArgs, linterInfo, mountInfo, thirdPartyCloudData, yaml)
